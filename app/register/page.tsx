@@ -27,7 +27,7 @@ console.log("Supabase Auth:", supabase?.auth);
       password,
       options: {
         data: {
-          full_name: name,
+          name: name,
         },
       },
     });
