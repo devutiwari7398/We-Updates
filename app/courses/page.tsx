@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import { categories, courses } from '@/data/courses';
+import { categories } from "@/data/courses";
 import { CourseCard } from '@/components/CourseCard';
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const pageSize = 6;
 
@@ -14,10 +16,32 @@ export default function Courses() {
   const [price, setPrice] = useState('All');
   const [sort, setSort] = useState('Popular');
   const [page, setPage] = useState(1);
-  const list = useMemo(() => courses.filter((course) => {
-    const matchesPrice = price === 'All' || (price === 'Under $25' ? course.price < 25 : price === '$25–$49' ? course.price >= 25 && course.price < 50 : course.price >= 50);
-    return (category === 'All' || course.category === category) && (type === 'All' || course.type === type) && matchesPrice && `${course.title} ${course.instructor} ${course.category}`.toLowerCase().includes(query.toLowerCase());
-  }).sort((a,b) => sort === 'Price: low to high' ? a.price-b.price : sort === 'Price: high to low' ? b.price-a.price : sort === 'Rating' ? b.rating-a.rating : b.students-a.students), [query, category, type, price, sort]);
+  const [coursesData, setCoursesData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+  fetchCourses();
+}, []);
+
+async function fetchCourses() {
+  setLoading(true);
+
+  const { data, error } = await supabase
+    .from("courses")
+    .select("*")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+
+  if (!error && data) {
+    setCoursesData(data);
+  }
+
+  setLoading(false);
+}
+  const list = useMemo(() => {
+  return coursesData.filter((course) =>
+    course.title.toLowerCase().includes(query.toLowerCase())
+  );
+}, [coursesData, query]);
   const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
   const activePage = Math.min(page, totalPages);
   const visibleCourses = list.slice((activePage - 1) * pageSize, activePage * pageSize);

@@ -65,30 +65,24 @@ if (pdfError) {
   return;
 }
 
-const { data: pdfUrlData } = await supabase.storage
-  .from("pdfs")
-  .createSignedUrl(pdfName, 60 * 60 * 24 * 365);
-
-const pdfUrl = pdfUrlData?.signedUrl;
-
 const result = await supabase
   .from("courses")
   .insert({
-    title,
-    slug: title.toLowerCase().replace(/\s+/g, "-"),
-    description,
-    price: Number(price),
-    content_type: "pdf",
+  title,
+  slug: title.toLowerCase().replace(/\s+/g, "-"),
+  description,
+  price: Number(price),
+  content_type: "pdf",
 
-    thumbnail_url: thumbnailUrl,
-    pdf_url: pdfUrl,
+  thumbnail_url: thumbnailUrl,
+  pdf_path: pdfName,
 
-    is_published: true,
-  })
+  is_published: true,
+})
   .select();
 
   console.log("Thumbnail URL:", thumbnailUrl);
-console.log("PDF URL:", pdfUrl);
+console.log("PDF PATH:", pdfName);
 console.log("INSERT RESULT:", result);
 
 console.log("INSERT RESULT", result);
