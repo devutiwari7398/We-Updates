@@ -135,12 +135,12 @@ export default async function CourseDetail({
 
           <div className="mt-6 flex items-center gap-3">
             <span className="text-3xl font-bold">
-              ${course.price}
+              ₹ {course.price}
             </span>
 
             {course.discount_price && (
               <span className="text-xl text-slate-400 line-through">
-                ${course.discount_price}
+                ₹{course.discount_price}
               </span>
             )}
           </div>

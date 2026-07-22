@@ -27,8 +27,8 @@ export function CourseCard({ course }: { course: any }) {
           <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
             <span className="font-semibold text-slate-700">{"We Updates"}</span><span className="flex items-center gap-1.5">
               <Users size={13}/>{"0"}</span></div><div className="mt-5 flex items-center justify-between"><div>
-                <span className="text-xl font-extrabold tracking-tight text-ink">${course.price}</span>
-                <span className="ml-2 text-xs text-slate-400 line-through">${course.price}</span></div>
+                <span className="text-xl font-extrabold tracking-tight text-ink">₹{course.price}</span>
+                <span className="ml-2 text-xs text-slate-400 line-through">₹{course.price}</span></div>
                 <Link href={`/courses/${course.slug}`} className="inline-flex h-9 w-9 items-center justify-center 
                 rounded-full bg-blue-50 text-brand transition group-hover:bg-brand group-hover:text-white" 
                 aria-label={`View ${course.title}`}><ArrowUpRight size={17}/></Link></div></div>
