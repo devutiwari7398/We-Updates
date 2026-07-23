@@ -176,25 +176,30 @@ if (profile) {
 
         <div className="space-y-3">
 
-  <button
-    className="w-full rounded-lg border p-4 text-left hover:bg-gray-50"
-  >
-    📚 My Courses
-  </button>
+
+<button
+  onClick={() => router.push("/profile/my-courses")}
+  className="w-full rounded-lg border p-4 text-left hover:bg-gray-50"
+>
+  📚 My Courses
+</button>
 
   <button
+    onClick={() => router.push("/profile/wishlist")}
     className="w-full rounded-lg border p-4 text-left hover:bg-gray-50"
   >
     ❤️ Wishlist
   </button>
 
   <button
+    onClick={() => router.push("/profile/settings")}
     className="w-full rounded-lg border p-4 text-left hover:bg-gray-50"
   >
     ⚙️ Account Settings
   </button>
 
   <button
+    onClick={() => router.push("/profile/change-password")}
     className="w-full rounded-lg border p-4 text-left hover:bg-gray-50"
   >
     🔒 Change Password

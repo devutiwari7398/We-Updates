@@ -6,7 +6,7 @@ export default function TermsPage() {
       </h1>
 
       <p className="text-gray-600 mb-8">
-        Last Updated: July 2026
+        Last Updated: 22 may 2024
       </p>
 
       <p>
