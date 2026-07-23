@@ -1,5 +1,6 @@
 
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import Link from 'next/link'; import Image from 'next/image'; 
 import { ArrowRight, CheckCircle2, FileText, PlayCircle, Star, Users, BookOpen, Sparkles } from 'lucide-react'; 
 import { categories } from '@/data/courses';

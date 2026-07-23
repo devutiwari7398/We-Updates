@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -44,10 +46,9 @@ async function getCourse(slug: string): Promise<Course | null> {
     .eq("is_published", true)
     .single();
 
-  if (error || !data) {
+ if (error || !data) {
     return null;
   }
-
   return data as Course;
 }
 
@@ -91,7 +92,7 @@ export default async function CourseDetail({
 }: PageProps) {
   const { slug } = await params;
 
-  const course = await getCourse(slug);
+const course = await getCourse(decodeURIComponent(slug));
 
   if (!course) {
     notFound();
@@ -128,10 +129,6 @@ export default async function CourseDetail({
           <h1 className="mt-4 text-4xl font-bold">
             {course.title}
           </h1>
-
-          <p className="mt-4 text-slate-600">
-            {course.description}
-          </p>
 
           <div className="mt-6 flex items-center gap-3">
             <span className="text-3xl font-bold">
