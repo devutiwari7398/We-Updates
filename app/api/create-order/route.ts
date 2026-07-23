@@ -45,11 +45,23 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-        const razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // paise
-      currency: "INR",
-      receipt: `ord_${Date.now()}`,
-    });
+        console.log("KEY_ID:", process.env.RAZORPAY_KEY_ID);
+console.log("SECRET_PRESENT:", !!process.env.RAZORPAY_KEY_SECRET);
+
+let razorpayOrder;
+
+try {
+  razorpayOrder = await razorpay.orders.create({
+    amount: Math.round(amount * 100),
+    currency: "INR",
+    receipt: `ord_${Date.now()}`,
+  });
+
+  console.log("ORDER CREATED:", razorpayOrder.id);
+} catch (err: any) {
+  console.error("RAZORPAY ERROR:", JSON.stringify(err, null, 2));
+  throw err;
+}
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
@@ -80,8 +92,8 @@ export async function POST(req: NextRequest) {
       course,
     });
 
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+  console.error("CREATE ORDER ERROR:", error);
 
     return NextResponse.json(
       {
