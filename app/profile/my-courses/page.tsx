@@ -10,6 +10,7 @@ interface Course {
   price: number;
   thumbnail_url: string | null;
   pdf_path: string | null;
+  whatsapp_group_url: string | null;
 }
 
 export default function MyCoursesPage() {
@@ -41,7 +42,8 @@ export default function MyCoursesPage() {
     title,
     price,
     thumbnail_url,
-    pdf_path
+    pdf_path,
+    whatsapp_group_url
   )
 `)
       .eq("user_id", user.id);
@@ -133,6 +135,17 @@ console.log("ERROR:", error);
 >
   Download PDF
 </button>
+
+{course.whatsapp_group_url && (
+  <a
+    href={course.whatsapp_group_url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="mt-3 inline-flex items-center justify-center rounded-lg bg-green-600 px-5 py-3 text-white font-semibold hover:bg-green-700 transition"
+  >
+    💬 Join WhatsApp Group
+  </a>
+)}
               </div>
             </div>
           ))}
