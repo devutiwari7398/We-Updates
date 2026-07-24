@@ -43,7 +43,7 @@ console.log("Supabase Auth:", supabase?.auth);
       "Registration successful! Please verify your email before logging in."
     );
 
-    router.push("/login");
+    router.push("/courses");
   }
 
   return (
