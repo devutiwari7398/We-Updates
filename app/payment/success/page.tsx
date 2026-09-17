@@ -1,11 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
 
-
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
 
   const orderId = searchParams.get("orderId");
@@ -49,81 +48,99 @@ export default function PaymentSuccessPage() {
       return;
     }
 
-   try {
-  setLoading(true);
+    try {
+      setLoading(true);
 
-  const response = await fetch(
-    "/api/complete-purchase",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        orderId,
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim(),
-        password,
-      }),
+      const response = await fetch(
+        "/api/complete-purchase",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            orderId,
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone.trim(),
+            password,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      console.log(
+        "Complete purchase response:",
+        result
+      );
+
+      if (!response.ok) {
+        alert(
+          result.error ||
+            "Failed to create your account."
+        );
+        return;
+      }
+
+      /*
+       * Account successfully created.
+       * Now automatically login the user.
+       */
+      const { error: loginError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: password,
+        });
+
+      if (loginError) {
+        console.error(
+          "AUTO LOGIN ERROR:",
+          loginError
+        );
+
+        alert(
+          "Account created, but automatic login failed. Please login manually."
+        );
+
+        window.location.href = "/login";
+        return;
+      }
+
+      /*
+       * Automatic login successful.
+       * Send user directly to My Courses.
+       */
+      alert(
+        "Account created successfully! Your course has been unlocked."
+      );
+
+      window.location.href =
+        "/profile/my-courses";
+    } catch (error) {
+      console.error(
+        "Complete purchase error:",
+        error
+      );
+
+      alert(
+        "Something went wrong while creating your account."
+      );
+    } finally {
+      setLoading(false);
     }
-  );
-
-  const result = await response.json();
-
-  console.log("Complete purchase response:", result);
-
-  if (!response.ok) {
-    alert(
-      result.error ||
-        "Failed to create your account."
-    );
-    return;
-  }
-
-  const { error: loginError } =
-  await supabase.auth.signInWithPassword({
-    email: email.trim().toLowerCase(),
-    password: password,
-  });
-
-if (loginError) {
-  console.error("AUTO LOGIN ERROR:", loginError);
-
-  alert(
-    "Account created, but automatic login failed. Please login manually."
-  );
-
-  window.location.href = "/login";
-  return;
-}
-
-alert(
-  "Account created successfully! Your course has been unlocked."
-);
-
-window.location.href = "/profile/my-courses";
-} catch (error) {
-  console.error(
-    "Complete purchase error:",
-    error
-  );
-
-  alert(
-    "Something went wrong while creating your account."
-  );
-} finally {
-  setLoading(false);
-}
   }
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-12">
       <div className="mx-auto max-w-lg">
+
         {/* Payment Success */}
         <div className="mb-6 rounded-2xl bg-white p-6 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <span className="text-3xl">✓</span>
+            <span className="text-3xl">
+              ✓
+            </span>
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900">
@@ -146,6 +163,7 @@ window.location.href = "/profile/my-courses";
           </p>
 
           <div className="space-y-4">
+
             {/* Full Name */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -155,7 +173,9 @@ window.location.href = "/profile/my-courses";
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
                 placeholder="Enter your full name"
                 className="w-full rounded-lg border border-gray-300 px-3 py-3 text-gray-900 outline-none focus:border-blue-500"
               />
@@ -170,7 +190,9 @@ window.location.href = "/profile/my-courses";
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
                 placeholder="Enter your email"
                 className="w-full rounded-lg border border-gray-300 px-3 py-3 text-gray-900 outline-none focus:border-blue-500"
               />
@@ -206,7 +228,9 @@ window.location.href = "/profile/my-courses";
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
                 placeholder="Minimum 6 characters"
                 className="w-full rounded-lg border border-gray-300 px-3 py-3 text-gray-900 outline-none focus:border-blue-500"
               />
@@ -222,7 +246,9 @@ window.location.href = "/profile/my-courses";
                 type="password"
                 value={confirmPassword}
                 onChange={(e) =>
-                  setConfirmPassword(e.target.value)
+                  setConfirmPassword(
+                    e.target.value
+                  )
                 }
                 placeholder="Re-enter your password"
                 className="w-full rounded-lg border border-gray-300 px-3 py-3 text-gray-900 outline-none focus:border-blue-500"
@@ -248,5 +274,26 @@ window.location.href = "/profile/my-courses";
         </div>
       </div>
     </main>
+  );
+}
+
+/*
+ * Suspense is required because PaymentSuccessContent
+ * uses useSearchParams().
+ *
+ * This prevents the Vercel production build error:
+ * "useSearchParams() should be wrapped in a suspense boundary"
+ */
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center">
+          <p>Loading...</p>
+        </main>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
