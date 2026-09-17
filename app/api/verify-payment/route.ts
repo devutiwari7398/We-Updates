@@ -16,104 +16,193 @@ export async function POST(req: NextRequest) {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      courseId,
-      userId,
-      price,
     } = body;
 
+    // Basic validation
     if (
       !orderId ||
       !razorpay_order_id ||
       !razorpay_payment_id ||
-      !razorpay_signature ||
-      !courseId ||
-      !userId
+      !razorpay_signature
     ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        {
+          error: "Missing required payment fields",
+        },
         { status: 400 }
       );
     }
 
-    // Signature Verify
+    // Get our order from Supabase
+    const { data: order, error: orderError } =
+      await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single();
+
+    if (orderError || !order) {
+      console.error("ORDER NOT FOUND:", orderError);
+
+      return NextResponse.json(
+        {
+          error: "Order not found",
+        },
+        { status: 404 }
+      );
+    }
+
+    // Make sure Razorpay order belongs to our order
+    if (
+      order.razorpay_order_id !== razorpay_order_id
+    ) {
+      return NextResponse.json(
+        {
+          error: "Razorpay order mismatch",
+        },
+        { status: 400 }
+      );
+    }
+
+    // If this order is already paid,
+    // don't process it again.
+    if (order.payment_status === "paid") {
+      return NextResponse.json({
+        success: true,
+        alreadyPaid: true,
+      });
+    }
+
+    // Verify Razorpay signature
     const generatedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .createHmac(
+        "sha256",
+        process.env.RAZORPAY_KEY_SECRET!
+      )
+      .update(
+        `${razorpay_order_id}|${razorpay_payment_id}`
+      )
       .digest("hex");
 
-    if (generatedSignature !== razorpay_signature) {
+    if (
+      generatedSignature !== razorpay_signature
+    ) {
+      console.error("INVALID RAZORPAY SIGNATURE");
+
       return NextResponse.json(
-        { error: "Invalid payment signature" },
+        {
+          error: "Invalid payment signature",
+        },
         { status: 400 }
       );
     }
 
-    // Update Order
-    const { error: orderUpdateError } = await supabase
-      .from("orders")
-      .update({
-        payment_status: "paid",
-        razorpay_payment_id,
-      })
-      .eq("id", orderId);
+    // Payment is verified.
+    // Mark the order as paid.
+    const { error: updateError } =
+      await supabase
+        .from("orders")
+        .update({
+          payment_status: "paid",
+          razorpay_payment_id:
+            razorpay_payment_id,
+        })
+        .eq("id", orderId);
 
-    if (orderUpdateError) {
-      console.error(orderUpdateError);
+    if (updateError) {
+      console.error(
+        "ORDER UPDATE ERROR:",
+        updateError
+      );
 
       return NextResponse.json(
-        { error: "Failed to update order" },
+        {
+          error:
+            "Payment verified but failed to update order.",
+        },
         { status: 500 }
       );
     }
 
-    // Order Item Insert
-    const { error: itemError } = await supabase
-      .from("order_items")
-      .insert({
-        order_id: orderId,
-        course_id: courseId,
-        price,
-      });
+    // Create order item if it doesn't already exist.
+    const { data: existingItem } =
+      await supabase
+        .from("order_items")
+        .select("id")
+        .eq("order_id", orderId)
+        .maybeSingle();
 
-    if (itemError) {
-      console.error(itemError);
+    if (!existingItem) {
+      if (!order.course_id) {
+        console.error(
+          "COURSE ID MISSING FROM ORDER"
+        );
 
-      return NextResponse.json(
-        { error: "Failed to save order item" },
-        { status: 500 }
-      );
+        return NextResponse.json(
+          {
+            error:
+              "Course information missing from order.",
+          },
+          { status: 500 }
+        );
+      }
+
+      const { error: itemError } =
+        await supabase
+          .from("order_items")
+          .insert({
+            order_id: orderId,
+            course_id: order.course_id,
+            price: order.total_amount,
+          });
+
+      if (itemError) {
+        console.error(
+          "ORDER ITEM ERROR:",
+          itemError
+        );
+
+        return NextResponse.json(
+          {
+            error:
+              "Payment verified but failed to save order item.",
+          },
+          { status: 500 }
+        );
+      }
     }
 
-    // User Course Insert
-    const { error: courseError } = await supabase
-      .from("user_courses")
-      .insert({
-        user_id: userId,
-        course_id: courseId,
-      });
+    // IMPORTANT:
+    // We DO NOT insert into user_courses here.
+    //
+    // The user is still a guest.
+    // After payment, the user will create an account.
+    // Then the order will be linked to that user
+    // and user_courses will be created.
 
-    if (courseError) {
-      console.error(courseError);
-
-      return NextResponse.json(
-        { error: "Failed to unlock course" },
-        { status: 500 }
-      );
-    }
+    console.log(
+      "PAYMENT VERIFIED SUCCESSFULLY:",
+      orderId
+    );
 
     return NextResponse.json({
       success: true,
+      orderId: orderId,
+      courseId: order.course_id,
+      message:
+        "Payment verified successfully.",
     });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(
+      "VERIFY PAYMENT ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
         error: "Internal Server Error",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
